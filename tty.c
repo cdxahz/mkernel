@@ -40,7 +40,7 @@ TTY_COLOR tty_get_frontcolor(int x, int y)
 
 	if (x < 0 || x >= TTY_MAX_ROW ||
 		y < 0 || y >= TTY_MAX_COL)
-		return;
+		return clBlack;
 
 	color_field = vidptr[cur*2+1];
 	return (color_field % 8);
@@ -53,7 +53,7 @@ TTY_COLOR tty_get_backcolor(int x, int y)
 
 	if (x < 0 || x >= TTY_MAX_ROW ||
 		y < 0 || y >= TTY_MAX_COL)
-		return;
+		return clBlack;
 
 	color_field = vidptr[cur*2+1];
 	return (color_field >> 4);
@@ -75,7 +75,7 @@ char tty_getchar(int x, int y)
 	int cur = ROW_COL_TO_CUR(x,y);
 	if (x < 0 || x >= TTY_MAX_ROW ||
 		y < 0 || y >= TTY_MAX_COL)
-		return;
+		return ' ';
 
 	return vidptr[cur*2];
 }
