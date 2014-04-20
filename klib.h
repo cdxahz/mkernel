@@ -9,6 +9,8 @@ void klib_putint(int num);
 
 void klib_print(char *str);
 
+void klib_info(char *info, int num, char* end);
+
 void klib_clear();
 
 char* klib_itoa(char* str, int num);

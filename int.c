@@ -30,8 +30,8 @@ static void setup_idt()
 
     unsigned long code_selector = KERNEL_CODE_SELECTOR ; 
     // setup keyboard
+
     keyboard_addr = ( unsigned long )asm_interrupt_handle_for_keyboard ; 
-    klib_putint(keyboard_addr);
     idt[ 0x21 ].dword0 = ( keyboard_addr & 0xffff ) | ( code_selector << 16 ) ;
     idt[ 0x21 ].dword1 = ( keyboard_addr & 0xffff0000 ) | 0x8e00 ;
 
@@ -150,8 +150,10 @@ void int_init()
 
     setup_idt();
 
-	int_diags();
+	// int_diags();
 }
+
+
 
 void int_diags()
 {
@@ -162,6 +164,8 @@ void int_diags()
     int ds;
     int esp;
     int eip;
+    unsigned long addr;
+    unsigned mem;
 	// output cr0
 	__asm__( "movl %%cr0, %0" : "=r"(_cr0) );
 	klib_print("cr0: ");
@@ -195,5 +199,13 @@ void int_diags()
 	a20 = read_port(0x92);
 	klib_print("a20: ");
 	klib_putint(a20);
+
+
+    // start function address
+    extern void start();
+    addr = ( unsigned long )start;
+    klib_print("start: ");
+    klib_putint(addr);
+
 }
 

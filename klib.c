@@ -53,7 +53,13 @@ void klib_putint(int num)
 {
 	char str[33] = {0};
 	klib_print( klib_itoa(str, num));
-	klib_putchar('\n');
+}
+
+void klib_info(char *info, int num, char* end)
+{
+    klib_print(info);
+    klib_putint(num);
+    klib_print(end);
 }
 
 

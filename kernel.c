@@ -5,20 +5,29 @@
 #include "klib.h"
 #include "int.h"
 #include "keyboard.h"
-static void run(void);
-static void init(void);
+#include "mm.h"
+#include "multiboot.h"
 
-void kmain(void)
+
+static void run(void);
+static void init(multiboot_info_t* mb);
+
+void kmain(multiboot_info_t* mb, unsigned int magic)
 {
-	init();
+    if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
+        return;
+    }
+    
+    init(mb); 
 	run();
 	return;
 }
 
-static void init()
+static void init(multiboot_info_t* mb)
 {
 	klib_init();
 	int_init();
+    mm_init(mb);
 	kb_init();
 }
 

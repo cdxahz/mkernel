@@ -83,5 +83,9 @@ void int_init();
 
 void int_update_tss(void* address);
 
+unsigned int_get_phymem_size();
+
 void int_diags();
+
+
 #endif
