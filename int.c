@@ -28,10 +28,11 @@ static void setup_idt()
     static unsigned long idt_desc[ 2 ] ;
     unsigned long idt_addr ;
 
-    unsigned long idt_offset = 0x8 ; 
+    unsigned long code_selector = KERNEL_CODE_SELECTOR ; 
     // setup keyboard
     keyboard_addr = ( unsigned long )asm_interrupt_handle_for_keyboard ; 
-    idt[ 0x21 ].dword0 = ( keyboard_addr & 0xffff ) | ( idt_offset << 16 ) ;
+    klib_putint(keyboard_addr);
+    idt[ 0x21 ].dword0 = ( keyboard_addr & 0xffff ) | ( code_selector << 16 ) ;
     idt[ 0x21 ].dword1 = ( keyboard_addr & 0xffff0000 ) | 0x8e00 ;
 
 
@@ -87,6 +88,23 @@ make_gdtr_operand (unsigned short limit, void *base)
   return limit | ((unsigned long long) (unsigned int) base << 16);
 }
 
+#define RELOAD_CS(SELECTOR) \
+    __asm__ ("ljmp %0, $L\nL:nop" : : "I"(SELECTOR));
+
+#define RELOAD_DS(SELECTOR) \
+    __asm__ ("movw %0, %%ax" : : "I"(SELECTOR)); \
+    __asm__ ("movw %ax, %ds");\
+    __asm__ ("movw %ax, %es");\
+    __asm__ ("movw %ax, %fs");\
+    __asm__ ("movw %ax, %gs");\
+    __asm__ ("movw %ax, %ss");
+
+#define RELOAD_TSS(SELECTOR) \
+    __asm__  ("ltr %w0" : : "q" (SELECTOR));
+
+#define RELOAD_GDT(gdtr) \
+    __asm__  ("lgdt %0" : : "m" (gdtr));
+
 
 static unsigned long long gdt[SELECTOR_COUNT];
 
@@ -108,8 +126,9 @@ static void setup_gdt()
     * for tss processor read physical memory from tss.base directly 
     */
    gdtr_operand = make_gdtr_operand (sizeof gdt - 1, gdt);
-   __asm__  ("lgdt %0" : : "m" (gdtr_operand));
-   
+   RELOAD_GDT(gdtr_operand);
+   RELOAD_CS(KERNEL_CODE_SELECTOR);
+   RELOAD_DS(KERNEL_DATA_SELECTOR);
 }
 
 /*
@@ -119,7 +138,7 @@ void int_update_tss(void* address)
 {
     unsigned int base = (unsigned int)address;
     gdt[TSS_SELECTOR / 8] =          make_seg_desc(base, 0x67,       SEG_CLASS_SYSTEM,   9,  KERNEL_PRIVILEGE, SEG_BASE_1);
-    __asm__  ("ltr %w0" : : "q" (TSS_SELECTOR));
+    RELOAD_TSS(TSS_SELECTOR);
 }
 
 void int_init()
@@ -140,6 +159,7 @@ void int_diags()
     int _cr3;
 	int a20;
     int cs;
+    int ds;
     int esp;
     int eip;
 	// output cr0
@@ -161,6 +181,10 @@ void int_diags()
     __asm__( "movl %%cs, %0" : "=r"(cs));
     klib_print("cs: ");
     klib_putint(cs);
+
+    __asm__( "movl %%fs, %0" : "=r"(ds));
+    klib_print("ds: ");
+    klib_putint(ds);
 
     __asm__( "movl %%esp, %0" : "=r"(esp));
     klib_print("esp: ");

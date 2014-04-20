@@ -43,11 +43,11 @@
 #define  USER_PRIVILEGE    3  
   
 #define  NULL_SELECTOR           0x0
-#define  KERNEL_DATA_SELECTOR    0x10
-#define  KERNEL_CODE_SELECTOR    0x8
-#define  USER_DATA_SELECTOR      0x23
-#define  USER_CODE_SELECTOR      0x1b
-#define  TSS_SELECTOR            0x2b // we are not going to use TSS when task switch, 
+#define  KERNEL_DATA_SELECTOR    0x8
+#define  KERNEL_CODE_SELECTOR    0x10
+#define  USER_DATA_SELECTOR      0x18
+#define  USER_CODE_SELECTOR      0x20
+#define  TSS_SELECTOR            0x28 // we are not going to use TSS when task switch, 
                                       //but we have to make tr register valid or x86 process
 #define  SELECTOR_COUNT          6 // kernel 2 + user 2 + tss 1 + empty
 
