@@ -3,12 +3,12 @@ ASM		= nasm
 CFLAGS	= -m32 -c -fno-stack-protector
 ASFLAGS	= -f elf32
 LD		= ld
-LDFILE	= link.ld
-LDFLAGS	= -m elf_i386 -T $(LDFILE)
+LDFILE	= -m elf_i386 -T link.ld
+LDFLAGS	= $(LDFILE)
 TARGET	= kernel
 
-all: boot.o kernel.o tty.o klib.o int.o interrupt.o keyboard.o list.o dsr.o
-	$(LD) $(LDFLAGS) -o $(TARGET) boot.o kernel.o tty.o klib.o int.o keyboard.o interrupt.o list.o dsr.o
+all: boot.o kernel.o tty.o klib.o int.o interrupt.o keyboard.o list.o dsr.o mm.o
+	$(LD) $(LDFLAGS) -o $(TARGET) boot.o kernel.o tty.o klib.o int.o keyboard.o interrupt.o list.o dsr.o mm.o
 
 boot.o: kernel.asm
 	$(ASM) $(ASFLAGS) kernel.asm -o boot.o
@@ -36,6 +36,9 @@ list.o: list.c list.h
 
 dsr.o: dsr.c dsr.h
 	$(CC) $(CFLAGS) dsr.c -o dsr.o
+
+mm.o: mm.c mm.h multiboot.h
+	$(CC) $(CFLAGS) -o mm.o mm.c
 
 clean:
 	-rm *.o
