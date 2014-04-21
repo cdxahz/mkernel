@@ -3,6 +3,8 @@
 
 typedef struct multiboot_info multiboot_info_t;
 
+#define KERNEL_OFFSET 0xC0000000
+
 #define PAGE_SIZE (4*1024)
 
 #define PG_TABLE_SIZE 1024
@@ -16,6 +18,15 @@ typedef struct multiboot_info multiboot_info_t;
 #define ADDR_TO_PET_OFFSET(addr)  ((addr & OFFSET_IN_PET_MASK) >> 12)
 #define ADDR_TO_PAGE_OFFSET(addr) (addr & OFFSET_IN_PAGE_MASK)
 
-void mm_init(multiboot_info_t* mb);
+#define _START \
+    __attribute__((section(".start")))
+
+#define _STARTDATA \
+    __attribute__((section(".startdata")))
+
+#define _STR \
+    __attribute__((section(".startdataro")))
+
+_START void mm_init(multiboot_info_t* mb);
 
 #endif

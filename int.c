@@ -2,7 +2,7 @@
 #include "keyboard.h"
 
 
-static void init_interrupt()
+_START static void init_interrupt()
 {
 
 
@@ -21,17 +21,21 @@ static void init_interrupt()
   write_port( 0xA1 , 0xFF ) ;
 }
 
-static void setup_idt()
+static segment_desc virtual_idt[ IDT_SIZE ] ; 
+static unsigned long virtual_idt_desc[ 2 ] ;
+
+_START static void setup_idt()
 {
     unsigned long keyboard_addr ;
-    static segment_desc idt[ IDT_SIZE ] ; 
-    static unsigned long idt_desc[ 2 ] ;
+    segment_desc *idt = (virtual_idt - KERNEL_OFFSET);
+    unsigned long *idt_desc = (virtual_idt_desc - KERNEL_OFFSET);
     unsigned long idt_addr ;
 
     unsigned long code_selector = KERNEL_CODE_SELECTOR ; 
     // setup keyboard
 
     keyboard_addr = ( unsigned long )asm_interrupt_handle_for_keyboard ; 
+    keyboard_addr -= KERNEL_OFFSET;
     idt[ 0x21 ].dword0 = ( keyboard_addr & 0xffff ) | ( code_selector << 16 ) ;
     idt[ 0x21 ].dword1 = ( keyboard_addr & 0xffff0000 ) | 0x8e00 ;
 
@@ -55,7 +59,7 @@ it can be used in rings numbered DPL or lower. In practice,
 DPL==3 means that user processes can use the segment and
 DPL==0 means that only the kernel can use the segment. See
 [IA32-v3a] 4.5 "Privilege Levels" for further discussion. */
-static unsigned long long
+_START static unsigned long long
 make_seg_desc (unsigned int base,
                unsigned int limit,
                unsigned int class,
@@ -82,7 +86,7 @@ make_seg_desc (unsigned int base,
   return e0 | ((unsigned long long) e1 << 32);
 }
 
-static unsigned long long
+_START static unsigned long long
 make_gdtr_operand (unsigned short limit, void *base)
 {
   return limit | ((unsigned long long) (unsigned int) base << 16);
@@ -106,11 +110,12 @@ make_gdtr_operand (unsigned short limit, void *base)
     __asm__  ("lgdt %0" : : "m" (gdtr));
 
 
-static unsigned long long gdt[SELECTOR_COUNT];
+static unsigned long long virtual_gdt[SELECTOR_COUNT];
 
-static void setup_gdt()
+_START static void setup_gdt()
 {
    unsigned long long gdtr_operand;
+   unsigned long long *gdt = (&virtual_gdt - KERNEL_OFFSET);
 
    gdt[0] = 0;
    gdt[KERNEL_CODE_SELECTOR / 8] =  make_seg_desc(0, ADDRESS_LIMIT, SEG_CLASS_DATA,     10, KERNEL_PRIVILEGE, SEG_BASE_4K); 
@@ -125,7 +130,7 @@ static void setup_gdt()
     * class (readonly/executable) and privilege different 
     * for tss processor read physical memory from tss.base directly 
     */
-   gdtr_operand = make_gdtr_operand (sizeof gdt - 1, gdt);
+   gdtr_operand = make_gdtr_operand (sizeof virtual_gdt - 1, gdt);
    RELOAD_GDT(gdtr_operand);
    RELOAD_CS(KERNEL_CODE_SELECTOR);
    RELOAD_DS(KERNEL_DATA_SELECTOR);
@@ -134,19 +139,20 @@ static void setup_gdt()
 /*
  * address should be a physical address
  */
-void int_update_tss(void* address)
+_START void int_update_tss(void* address)
 {
     unsigned int base = (unsigned int)address;
+    unsigned long long *gdt = (&virtual_gdt - KERNEL_OFFSET);
     gdt[TSS_SELECTOR / 8] =          make_seg_desc(base, 0x67,       SEG_CLASS_SYSTEM,   9,  KERNEL_PRIVILEGE, SEG_BASE_1);
     RELOAD_TSS(TSS_SELECTOR);
 }
 
-void int_init()
+_START void int_init()
 {
 
     init_interrupt();
 
-    setup_gdt();
+    // setup_gdt();
 
     setup_idt();
 
@@ -155,7 +161,7 @@ void int_init()
 
 
 
-void int_diags()
+_START void int_diags()
 {
 	int _cr0;
     int _cr3;

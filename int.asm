@@ -7,7 +7,7 @@ global shutdown
 extern kb_process
 
 
-
+section .start
 write_port:
   mov   edx, [esp + 4]    
   mov   al, [esp + 4 + 4]  
@@ -16,6 +16,7 @@ write_port:
   nop  
   ret  
 
+section .start
 read_port:
   mov   edx, [esp + 4] 
   xor   eax, eax  
@@ -25,7 +26,7 @@ read_port:
   ret  
 
 
- 
+section .start
 shutdown:
           mov ax,5300h
           mov bx,0
@@ -62,7 +63,8 @@ shutdown:
           mov cx,3
           int 15h
           int 20h
-  
+ 
+section .text
 asm_interrupt_handle_for_keyboard:
   pushad      
   push    ds  

@@ -70,7 +70,6 @@ __start:
 	push ebx 
 	
 	mov ecx, kmain
-	sub ecx, 0xC0000000
 	call ecx
  
 	; In case the function returns, we'll want to put the computer into an

@@ -5,6 +5,19 @@
    kernel image. */
 SECTIONS
 {
+	. = 0x200000;
+
+	.start BLOCK(64K) : AT(0x200000)
+	{
+		*(.start)
+	}
+
+	.startdata BLOCK(64K) : AT(0x210000)
+	{
+		*(.startdata)
+	}
+
+
 	/* Begin putting sections at 1 MiB, a conventional place for kernels to be
 	   loaded at by the bootloader. */
 	. = 0xC0000000 + 0x100000;

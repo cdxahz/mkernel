@@ -2,20 +2,23 @@
 #include "klib.h"
 #include "multiboot.h"
 
-#define GDT_ADDRESS 0x10C000
-#define PG0_ADDRESS 0x10D000
-#define PG1_ADDRESS 0x10E000
+#define GDT_ADDRESS 0x220000
+#define PG0_ADDRESS 0x221000
+#define PG1_ADDRESS 0x222000
 
-static void mm_dump_phy(multiboot_info_t* mb);
-static void mm_get_phy_mem_bound(multiboot_info_t* mb);
-static void mm_setup_beginning_8m();
+_START static void mm_dump_phy(multiboot_info_t* mb);
+_START static void mm_get_phy_mem_bound(multiboot_info_t* mb);
+_START static void mm_setup_beginning_8m();
 
 static unsigned long long phy_mem_low;
 static unsigned long long phy_mem_high;
 
+_STARTDATA static unsigned long long _phy_mem_low;
+_STARTDATA static unsigned long long _phy_mem_high;
 
+_STARTDATA static char msg[] = "hello";
 
-void mm_init(multiboot_info_t* mb)
+_START void mm_init(multiboot_info_t* mb)
 {
     // mm_dump_phy(mb);
     mm_get_phy_mem_bound(mb);
@@ -24,7 +27,7 @@ void mm_init(multiboot_info_t* mb)
 
 
 
-void mm_dump_phy(multiboot_info_t* mb)
+_START void mm_dump_phy(multiboot_info_t* mb)
 {
     unsigned int count = mb->mmap_length;
     unsigned int map_addr = mb->mmap_addr;
@@ -78,7 +81,7 @@ void mm_dump_phy(multiboot_info_t* mb)
     */
 }
 
-static void mm_get_phy_mem_bound(multiboot_info_t* mb)
+_START static void mm_get_phy_mem_bound(multiboot_info_t* mb)
 {  
     unsigned int map_addr = mb->mmap_addr;
     memory_map_t *map;
@@ -89,8 +92,8 @@ static void mm_get_phy_mem_bound(multiboot_info_t* mb)
         while((unsigned int)map < mb->mmap_addr + mb->mmap_length) {
 
             if (map->type == 0x1 && map->base_addr_low != 0) {
-                phy_mem_low = map->base_addr_low + map->base_addr_high << 32;
-                phy_mem_high = phy_mem_low + (map->length_low + map->length_high << 32);
+                _phy_mem_low = map->base_addr_low + map->base_addr_high << 32;
+                _phy_mem_high = phy_mem_low + (map->length_low + map->length_high << 32);
                 break;
             }
     		map = (memory_map_t*) ( (unsigned int)map + map->size + sizeof(unsigned int) );
@@ -114,7 +117,7 @@ static void mm_get_phy_mem_bound(multiboot_info_t* mb)
 __asm__ ("jmp 1f \n1:\n\tmovl $1f,%eax\n\tjmp *%eax \n1:\n\tnop");
 
 
-static void simulate_paging(unsigned address)
+_START static void simulate_paging(unsigned address)
 {
     int *gdt = (int*)GDT_ADDRESS;
     int *pet = 0;
@@ -142,7 +145,8 @@ static void simulate_paging(unsigned address)
     phy = phy | page_offset;
     klib_info("physical address: ", phy, "\n");
 }
-static void mm_setup_beginning_8m()
+
+_START static void mm_setup_beginning_8m()
 {
     unsigned int phy = 7;
     int i = 0;

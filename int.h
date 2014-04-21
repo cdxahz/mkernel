@@ -2,6 +2,9 @@
  #ifndef _INT_H_
  #define _INT_H_
 
+
+#include "mm.h"
+
 #define  INT_M_CTL     0x20  
 #define  INT_M_CTLMASK 0x21  
 #define  INT_S_CTL     0xA0  
@@ -79,13 +82,13 @@ extern void write_port(unsigned short port, unsigned char data);
 extern void asm_interrupt_handle_for_keyboard();
 extern void shutdown();
 
-void int_init();
+_START void int_init();
 
-void int_update_tss(void* address);
+_START void int_update_tss(void* address);
 
-unsigned int_get_phymem_size();
+_START unsigned int_get_phymem_size();
 
-void int_diags();
+_START void int_diags();
 
 
 #endif

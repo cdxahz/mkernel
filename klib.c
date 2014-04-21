@@ -1,20 +1,22 @@
 #include "klib.h"
 #include "tty.h"
 
-static int cursor = 0;
+
+_STARTDATA static int cursor = 0;
 #define CUR_ROW (cursor / TTY_MAX_COL)
 #define CUR_COL (cursor % TTY_MAX_COL)
 
-static void klib_cursor_forward(int new_pos);
+_START static void klib_cursor_forward(int new_pos);
 
-void klib_init()
+_START void klib_init()
 {
 	tty_init();
+
 	cursor = 0;
 }
 
 
-void klib_putchar(char c)
+_START void klib_putchar(char c)
 {
 	int new_pos = 0;
 
@@ -39,7 +41,7 @@ void klib_putchar(char c)
 	klib_cursor_forward(new_pos);
 }
 
-void klib_print(char *str)
+_START void klib_print(char *str)
 {
 	if (!str || !*str)
 	  return;
@@ -49,13 +51,13 @@ void klib_print(char *str)
 	}
 }
 
-void klib_putint(int num)
+_START void klib_putint(int num)
 {
 	char str[33] = {0};
 	klib_print( klib_itoa(str, num));
 }
 
-void klib_info(char *info, int num, char* end)
+_START void klib_info(char *info, int num, char* end)
 {
     klib_print(info);
     klib_putint(num);
@@ -63,13 +65,13 @@ void klib_info(char *info, int num, char* end)
 }
 
 
-void klib_clear()
+_START void klib_clear()
 {
 	tty_clear();
 	cursor = 0;
 }
 
-static void klib_cursor_forward(int new_pos)
+_START static void klib_cursor_forward(int new_pos)
 {
 	cursor = new_pos;
 	while (cursor >= TTY_MAX_CHARS)
@@ -79,7 +81,7 @@ static void klib_cursor_forward(int new_pos)
 	}
 }
 
-char *klib_itoa(char *str, int num)
+_START char *klib_itoa(char *str, int num)
 {  
   char *p = str;  
   char ch;  

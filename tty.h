@@ -1,5 +1,6 @@
 #ifndef _TTY_H_
 #define _TTY_H_
+#include "mm.h"
 
 #define TTY_MAX_ROW 25
 #define TTY_MAX_COL 80
@@ -28,20 +29,20 @@ typedef enum _TTY_COLOR
 	clWhite 
 }TTY_COLOR;
 
-void tty_init(void);
+_START void tty_init(void);
 
-void tty_setcolor(int x, int y, TTY_COLOR front, TTY_COLOR back);
+_START void tty_setcolor(int x, int y, TTY_COLOR front, TTY_COLOR back);
 
-TTY_COLOR tty_get_frontcolor(int x, int y);
+_START TTY_COLOR tty_get_frontcolor(int x, int y);
 
-TTY_COLOR tty_get_backcolor(int x, int Y);
+_START TTY_COLOR tty_get_backcolor(int x, int Y);
 
-void tty_putchar(int x, int y, char c);
+_START void tty_putchar(int x, int y, char c);
 
-char tty_getchar(int x, int y);
+_START char tty_getchar(int x, int y);
 
-void tty_roll_one_line();
+_START void tty_roll_one_line();
 
-void tty_clear();
+_START void tty_clear();
 
 #endif

@@ -9,29 +9,45 @@
 #include "multiboot.h"
 
 
-static void run(void);
-static void init(multiboot_info_t* mb);
+_START static void run(void);
+_START static void init(multiboot_info_t* mb);
 
-void kmain(multiboot_info_t* mb, unsigned int magic)
+_START void kmain(multiboot_info_t* mb, unsigned int magic)
 {
+
     if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
         return;
     }
+
+
+    init(mb);
+
+
+    run();
     
-    init(mb); 
-	run();
+    // init(mb); 
+	// run();
 	return;
 }
 
-static void init(multiboot_info_t* mb)
+
+
+_START static void init(multiboot_info_t* mb)
 {
-	klib_init();
-	int_init();
+
+    klib_init();
+
+    int_init();
+
+    return;
+
     mm_init(mb);
+
+    // Here we can access all virtual memory
 	kb_init();
 }
 
-static void run()
+_START static void run()
 {
 	
 	int count = 0;
