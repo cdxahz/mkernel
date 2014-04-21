@@ -3,7 +3,7 @@ ASM		= nasm
 CFLAGS	= -m32 -c -fno-stack-protector
 ASFLAGS	= -f elf32
 LD		= ld
-LDFILE	= -m elf_i386 -T link.ld
+LDFILE	= -m elf_i386 -T link.ld -e 0x100010
 LDFLAGS	= $(LDFILE)
 TARGET	= kernel
 

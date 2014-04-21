@@ -202,10 +202,6 @@ void int_diags()
 
 
     // start function address
-    extern void start();
-    addr = ( unsigned long )start;
-    klib_print("start: ");
-    klib_putint(addr);
 
 }
 

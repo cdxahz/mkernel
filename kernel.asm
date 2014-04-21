@@ -1,3 +1,4 @@
+
 ; Declare constants used for creating a multiboot header.
 MBALIGN     equ  1<<0                   ; align loaded modules on page boundaries
 MEMINFO     equ  1<<1                   ; provide memory map
@@ -15,7 +16,8 @@ align 4
 	dd MAGIC
 	dd FLAGS
 	dd CHECKSUM
- 
+	dd 0
+
 ; Currently the stack pointer register (esp) points at anything and using it may
 ; cause massive harm. Instead, we'll provide our own stack. We will allocate
 ; room for a small temporary stack by creating a symbol at the bottom of it,
@@ -30,8 +32,8 @@ stack_top:
 ; bootloader will jump to this position once the kernel has been loaded. It
 ; doesn't make sense to return from this function as the bootloader is gone.
 section .text
-global start
-start:
+global __start
+__start:
 	; Welcome to kernel mode! We now have sufficient code for the bootloader to
 	; load and run our operating system. It doesn't do anything interesting yet.
 	; Perhaps we would like to call printf("Hello, World\n"). You should now
@@ -53,9 +55,11 @@ start:
 	; such as floating point instructions are not available yet.
  
 	; To set up a stack, we simply set the esp register to point to the top of
-	; our stack (as it grows downwards).
-	mov esp, stack_top
- 
+	; our stack (as it grows downwards)
+	mov ecx, stack_top
+	sub ecx, 0xC0000000
+	mov esp, ecx
+	
 	; We are now ready to actually execute C code. We cannot embed that in an
 	; assembly file, so we'll create a kernel.c file in a moment. In that file,
 	; we'll create a C entry point called kernel_main and call it here.
@@ -64,8 +68,10 @@ start:
 	push eax
 	; ebx contains multiboot_info_t*
 	push ebx 
-
-	call kmain
+	
+	mov ecx, kmain
+	sub ecx, 0xC0000000
+	call ecx
  
 	; In case the function returns, we'll want to put the computer into an
 	; infinite loop. To do that, we use the clear interrupt ('cli') instruction
