@@ -16,4 +16,17 @@ _START void klib_clear();
 
 _START char* klib_itoa(char* str, int num);
 
+// following is above 0xC0000000 code & data
+#define KHEAP_END	 0xC0800000
+#define KHEAP_BEGIN	 0xC0300000
+#define NULL (void*)0
+typedef struct _kblock
+{
+	unsigned int size;
+	struct _kblock *next;
+}kblock;
+
+void* kmalloc(unsigned int size);
+
+void kfree(void* buf);
 #endif

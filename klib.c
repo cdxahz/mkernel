@@ -2,13 +2,13 @@
 #include "tty.h"
 
 
-_STARTDATA static int cursor = 0;
+static int cursor = 0;
 #define CUR_ROW (cursor / TTY_MAX_COL)
 #define CUR_COL (cursor % TTY_MAX_COL)
 
-_START static void klib_cursor_forward(int new_pos);
+static void klib_cursor_forward(int new_pos);
 
-_START void klib_init()
+void klib_init()
 {
 	tty_init();
 
@@ -41,37 +41,37 @@ _START void klib_putchar(char c)
 	klib_cursor_forward(new_pos);
 }
 
-_START void klib_print(char *str)
+void klib_print(char *str)
 {
-	if (!str || !*str)
-	  return;
+	if (!str || !*str){
+		return;
+	}
 
 	while (*str){
 		klib_putchar( *str++);
 	}
 }
 
-_START void klib_putint(int num)
+void klib_putint(int num)
 {
 	char str[33] = {0};
 	klib_print( klib_itoa(str, num));
 }
 
-_START void klib_info(char *info, int num, char* end)
+void klib_info(char *info, int num, char* end)
 {
     klib_print(info);
     klib_putint(num);
     klib_print(end);
 }
 
-
-_START void klib_clear()
+void klib_clear()
 {
 	tty_clear();
 	cursor = 0;
 }
 
-_START static void klib_cursor_forward(int new_pos)
+static void klib_cursor_forward(int new_pos)
 {
 	cursor = new_pos;
 	while (cursor >= TTY_MAX_CHARS)
@@ -81,7 +81,7 @@ _START static void klib_cursor_forward(int new_pos)
 	}
 }
 
-_START char *klib_itoa(char *str, int num)
+char *klib_itoa(char *str, int num)
 {  
   char *p = str;  
   char ch;  
@@ -109,4 +109,51 @@ _START char *klib_itoa(char *str, int num)
   }  
   *p = 0;   
   return str;  
-}  
+}
+
+static unsigned int cur_block_top = KHEAP_BEGIN;
+static kblock free_list[16] = {0}; // well, allocate more for reserve
+
+static unsigned int kblk(unsigned page_count)
+{
+	unsigned ret = cur_block_top;
+
+	if (page_count == 0)
+	  return 0;
+
+	if (cur_block_top + page_count * PAGE_SIZE >= KHEAP_END)
+	  return 0;
+
+	cur_block_top += page_count * PAGE_SIZE;
+}
+
+void* kmalloc(unsigned size)
+{
+	unsigned int ret = 0;
+	int free_list_index = size / 8 + 1;
+	kblock free_list_head = free_list[free_list_index];
+	int index = 0;
+
+	if (size > (4 * PAGE_SIZE)) // that's too large
+		return NULL;
+	
+	if (free_list_head.next != NULL){
+		kblock * block = free_list_head.next;
+		free_list_head.next = free_list_head.next->next;
+		block->next = 0;
+		ret = (unsigned int)block;
+		ret += sizeof(kblock);
+		return (void*)ret;
+	}
+
+	for (index = 0; index < 16; index++){
+	}
+
+	return NULL;
+
+}
+
+void kfree(void* buf)
+{
+}
+

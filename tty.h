@@ -29,20 +29,20 @@ typedef enum _TTY_COLOR
 	clWhite 
 }TTY_COLOR;
 
-_START void tty_init(void);
+void tty_init(void);
 
-_START void tty_setcolor(int x, int y, TTY_COLOR front, TTY_COLOR back);
+void tty_setcolor(int x, int y, TTY_COLOR front, TTY_COLOR back);
 
-_START TTY_COLOR tty_get_frontcolor(int x, int y);
+TTY_COLOR tty_get_frontcolor(int x, int y);
 
-_START TTY_COLOR tty_get_backcolor(int x, int Y);
+TTY_COLOR tty_get_backcolor(int x, int Y);
 
-_START void tty_putchar(int x, int y, char c);
+void tty_putchar(int x, int y, char c);
 
-_START char tty_getchar(int x, int y);
+char tty_getchar(int x, int y);
 
-_START void tty_roll_one_line();
+void tty_roll_one_line();
 
-_START void tty_clear();
+void tty_clear();
 
 #endif

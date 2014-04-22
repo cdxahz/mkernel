@@ -18,6 +18,9 @@ typedef struct multiboot_info multiboot_info_t;
 #define ADDR_TO_PET_OFFSET(addr)  ((addr & OFFSET_IN_PET_MASK) >> 12)
 #define ADDR_TO_PAGE_OFFSET(addr) (addr & OFFSET_IN_PAGE_MASK)
 
+#define USABLE_PG_INDEX_MIN 2
+#define USABLE_PG_INDEX_MAX 1023
+
 #define _START \
     __attribute__((section(".start")))
 

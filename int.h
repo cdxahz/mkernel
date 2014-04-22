@@ -63,8 +63,7 @@
 #define  SEG_BASE_1             0       // address count with 1 byte
 
 #define IDT_SIZE 256
- 
- 
+  
   
  
 typedef struct _segment_desc{
@@ -88,7 +87,7 @@ _START void int_update_tss(void* address);
 
 _START unsigned int_get_phymem_size();
 
-_START void int_diags();
+void int_diags();
 
 
 #endif

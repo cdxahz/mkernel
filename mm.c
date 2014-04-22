@@ -2,9 +2,9 @@
 #include "klib.h"
 #include "multiboot.h"
 
-#define GDT_ADDRESS 0x220000
-#define PG0_ADDRESS 0x221000
-#define PG1_ADDRESS 0x222000
+#define GDT_ADDRESS 0x1C0000
+#define PG0_ADDRESS 0x1C1000
+#define PG1_ADDRESS 0x1C2000
 
 _START static void mm_dump_phy(multiboot_info_t* mb);
 _START static void mm_get_phy_mem_bound(multiboot_info_t* mb);
@@ -114,7 +114,8 @@ _START static void mm_get_phy_mem_bound(multiboot_info_t* mb)
     __asm__ ("movl %eax,%cr0");
 
 #define RELOAD_EIP() \
-__asm__ ("jmp 1f \n1:\n\tmovl $1f,%eax\n\tjmp *%eax \n1:\n\tnop");
+	__asm__ ("jmp 1f \n1:\n\tmovl $1f,%eax\n\tjmp *%eax \n1:\n\tnop");
+
 
 
 _START static void simulate_paging(unsigned address)
@@ -125,6 +126,7 @@ _START static void simulate_paging(unsigned address)
     int pe_index = 0;
     int page_offset = 0;
     unsigned phy = 0;
+
 
     klib_info("virtual address: ", address, "\n");
 
@@ -146,23 +148,32 @@ _START static void simulate_paging(unsigned address)
     klib_info("physical address: ", phy, "\n");
 }
 
+static void mm_high_memory_fun()
+{
+	RELOAD_EIP();
+	phy_mem_high = _phy_mem_high;
+	phy_mem_low = _phy_mem_low;
+	extern kmain_startup();
+	kmain_startup();
+}
+
 _START static void mm_setup_beginning_8m()
 {
     unsigned int phy = 7;
     int i = 0;
-    int * gdt = (int*)GDT_ADDRESS;
-    int * pg0 = (int*)PG0_ADDRESS;
-    int * pg1 = (int*)PG1_ADDRESS;
+    unsigned int * gdt = (int*)GDT_ADDRESS;
+    unsigned int * pg0 = (int*)PG0_ADDRESS;
+    unsigned int * pg1 = (int*)PG1_ADDRESS;
     for (i = 0; i < PG_TABLE_SIZE; i++) {
         gdt[i] = 0;
     }
     // following two are for user space
     gdt[0] = PG0_ADDRESS | 0x07; 
-    gdt[1] = PG0_ADDRESS | 0x07;
+    gdt[1] = PG1_ADDRESS | 0x07;
 
     // following two are for kernel space
     gdt[768] = PG0_ADDRESS | 0x07;
-    gdt[769] = PG0_ADDRESS | 0x07;
+    gdt[769] = PG1_ADDRESS | 0x07;
 
     for (i = 0; i < PE_TABLE_SIZE; i++) {
         pg0[i] = phy;
@@ -176,6 +187,7 @@ _START static void mm_setup_beginning_8m()
 
     RELOAD_CR3(GDT_ADDRESS);
     ENABLE_PAGING();
-    RELOAD_EIP();
+	mm_high_memory_fun();
+	return;
     // simulate_paging(0x001012a0);
 }

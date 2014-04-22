@@ -31,7 +31,7 @@ stack_top:
 ; The linker script specifies _start as the entry point to the kernel and the
 ; bootloader will jump to this position once the kernel has been loaded. It
 ; doesn't make sense to return from this function as the bootloader is gone.
-section .text
+section .start
 global __start
 __start:
 	; Welcome to kernel mode! We now have sufficient code for the bootloader to
@@ -69,8 +69,8 @@ __start:
 	; ebx contains multiboot_info_t*
 	push ebx 
 	
-	mov ecx, kmain
-	call ecx
+	; mov ecx, kmain
+	call kmain
  
 	; In case the function returns, we'll want to put the computer into an
 	; infinite loop. To do that, we use the clear interrupt ('cli') instruction

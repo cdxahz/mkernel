@@ -64,7 +64,7 @@ shutdown:
           int 15h
           int 20h
  
-section .text
+section .start
 asm_interrupt_handle_for_keyboard:
   pushad      
   push    ds  

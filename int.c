@@ -21,21 +21,18 @@ _START static void init_interrupt()
   write_port( 0xA1 , 0xFF ) ;
 }
 
-static segment_desc virtual_idt[ IDT_SIZE ] ; 
-static unsigned long virtual_idt_desc[ 2 ] ;
+_STARTDATA static segment_desc idt[ IDT_SIZE ] ; 
+_STARTDATA static unsigned long idt_desc[ 2 ] ;
 
 _START static void setup_idt()
 {
     unsigned long keyboard_addr ;
-    segment_desc *idt = (virtual_idt - KERNEL_OFFSET);
-    unsigned long *idt_desc = (virtual_idt_desc - KERNEL_OFFSET);
     unsigned long idt_addr ;
 
     unsigned long code_selector = KERNEL_CODE_SELECTOR ; 
     // setup keyboard
 
     keyboard_addr = ( unsigned long )asm_interrupt_handle_for_keyboard ; 
-    keyboard_addr -= KERNEL_OFFSET;
     idt[ 0x21 ].dword0 = ( keyboard_addr & 0xffff ) | ( code_selector << 16 ) ;
     idt[ 0x21 ].dword1 = ( keyboard_addr & 0xffff0000 ) | 0x8e00 ;
 
@@ -110,12 +107,13 @@ make_gdtr_operand (unsigned short limit, void *base)
     __asm__  ("lgdt %0" : : "m" (gdtr));
 
 
-static unsigned long long virtual_gdt[SELECTOR_COUNT];
+_STARTDATA static unsigned long long gdt[SELECTOR_COUNT];
+_STARTDATA unsigned long long gdtr_operand;
+
+static unsigned long long * virtual_gdt = (gdt + KERNEL_OFFSET);
 
 _START static void setup_gdt()
 {
-   unsigned long long gdtr_operand;
-   unsigned long long *gdt = (&virtual_gdt - KERNEL_OFFSET);
 
    gdt[0] = 0;
    gdt[KERNEL_CODE_SELECTOR / 8] =  make_seg_desc(0, ADDRESS_LIMIT, SEG_CLASS_DATA,     10, KERNEL_PRIVILEGE, SEG_BASE_4K); 
@@ -130,7 +128,7 @@ _START static void setup_gdt()
     * class (readonly/executable) and privilege different 
     * for tss processor read physical memory from tss.base directly 
     */
-   gdtr_operand = make_gdtr_operand (sizeof virtual_gdt - 1, gdt);
+   gdtr_operand = make_gdtr_operand (sizeof gdt - 1, gdt);
    RELOAD_GDT(gdtr_operand);
    RELOAD_CS(KERNEL_CODE_SELECTOR);
    RELOAD_DS(KERNEL_DATA_SELECTOR);
@@ -142,7 +140,6 @@ _START static void setup_gdt()
 _START void int_update_tss(void* address)
 {
     unsigned int base = (unsigned int)address;
-    unsigned long long *gdt = (&virtual_gdt - KERNEL_OFFSET);
     gdt[TSS_SELECTOR / 8] =          make_seg_desc(base, 0x67,       SEG_CLASS_SYSTEM,   9,  KERNEL_PRIVILEGE, SEG_BASE_1);
     RELOAD_TSS(TSS_SELECTOR);
 }
@@ -152,7 +149,8 @@ _START void int_init()
 
     init_interrupt();
 
-    // setup_gdt();
+    setup_gdt();
+
 
     setup_idt();
 
@@ -160,8 +158,7 @@ _START void int_init()
 }
 
 
-
-_START void int_diags()
+void int_diags()
 {
 	int _cr0;
     int _cr3;
@@ -176,11 +173,11 @@ _START void int_diags()
 	__asm__( "movl %%cr0, %0" : "=r"(_cr0) );
 	klib_print("cr0: ");
 	klib_putint(_cr0);
-	klib_print("---------------\n");
+	klib_print("\n---------------\n");
 
 	klib_print("\t protected mode enabled: ");
 	klib_putint( _cr0 & 0x1);
-	klib_print("\t paging enabled: ");
+	klib_print("\n\t paging enabled: ");
 	klib_putint( _cr0 & 0x80000000);
     klib_print("\n");
 
@@ -189,21 +186,21 @@ _START void int_diags()
     klib_putint(_cr3);
 
     __asm__( "movl %%cs, %0" : "=r"(cs));
-    klib_print("cs: ");
+    klib_print("\ncs: ");
     klib_putint(cs);
 
     __asm__( "movl %%fs, %0" : "=r"(ds));
-    klib_print("ds: ");
+    klib_print("\nds: ");
     klib_putint(ds);
 
     __asm__( "movl %%esp, %0" : "=r"(esp));
-    klib_print("esp: ");
+    klib_print("\nesp: ");
     klib_putint(esp);
 
 
 	// output A20
 	a20 = read_port(0x92);
-	klib_print("a20: ");
+	klib_print("\na20: ");
 	klib_putint(a20);
 
 

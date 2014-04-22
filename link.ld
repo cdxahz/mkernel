@@ -5,14 +5,15 @@
    kernel image. */
 SECTIONS
 {
-	. = 0x200000;
+	. = 0x100000;
 
-	.start BLOCK(64K) : AT(0x200000)
+	.start BLOCK(64K) : AT(0x100000)
 	{
+		*(.multiboot)
 		*(.start)
 	}
 
-	.startdata BLOCK(64K) : AT(0x210000)
+	.startdata BLOCK(64K) : AT(0x110000)
 	{
 		*(.startdata)
 	}
@@ -20,31 +21,30 @@ SECTIONS
 
 	/* Begin putting sections at 1 MiB, a conventional place for kernels to be
 	   loaded at by the bootloader. */
-	. = 0xC0000000 + 0x100000;
+	. = 0xC0000000 + 0x200000;
 
 	/* First put the multiboot header, as it is required to be put very early
 	   early in the image or the bootloader won't recognize the file format.
 	   Next we'll put the .text section. */
-	.text BLOCK(64K) :  AT(0x100000)
+	.text BLOCK(64K) :  AT(0x200000)
 	{
-		*(.multiboot)
 		*(.text)
 	}
 
 	/* Read-only data. */
-	.rodata BLOCK(4K) : AT(0x110000)
+	.rodata BLOCK(4K) : AT(0x201000)
 	{
 		*(.rodata)
 	}
 
 	/* Read-write data (initialized) */
-	.data BLOCK(4K) : AT(0x111000)
+	.data BLOCK(4K) : AT(0x202000)
 	{
 		*(.data)
 	}
 
 	/* Read-write data (uninitialized) and stack */
-	.bss BLOCK(4K) : AT(0x112000)
+	.bss BLOCK(4K) : AT(0x203000)
 	{
 		*(COMMON)
 		*(.bss)
