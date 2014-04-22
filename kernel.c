@@ -30,9 +30,9 @@ _START void kmain(multiboot_info_t* mb, unsigned int magic)
 
 void kmain_startup()
 {
+	char* msg = NULL;
     klib_init();
 	int_diags();
-
 	kb_init();
 	run();
 }
