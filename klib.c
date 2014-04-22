@@ -272,7 +272,7 @@ static void klib_add_to_free_list(int index, kblock* buf)
 
 	if (!merged && node != NULL){
 		merged_index = index * 2 + 1;
-		if ((buf_addr + 8 * (index + 1) == node_addr) && (index <= 512)){
+		if ((buf_addr + 8 * (index + 1) == node_addr) && (merged_index <= 512)){
 			// merge node
 			pre->next = node->next;
 			buf->next = NULL;
@@ -290,5 +290,247 @@ static void klib_add_to_free_list(int index, kblock* buf)
 
 }
 
+void memcpy(void* _src, void* _dst, unsigned len)
+{
+	char* src = _src;
+	char* dst = _dst;
+
+	int i = 0;
+    for (i = 0; i < len; i++) {
+        src[i] = dst[i];
+    }
+}
+
+void memmove(void* _src, void* _dst, unsigned len)
+{
+	char* src = _src;
+	char* dst = _dst;
+
+	int i = 0;
+
+    if (src >= dst) {
+		for (i = 0; i < len; i++) {
+			src[i] = dst[i];
+		}
+    }else{
+		for (i = len - 1; i >= 0; i--) {
+			src[i] = dst[i];
+		}
+	}
+    
+}
+
+int memcmp(void* _src, void* _dst, unsigned len)
+{
+	char* src = _src;
+	char* dst = _dst;
+	int i = 0;
+
+    for (i = 0; i < len; i++) {
+        if (src[i] > dst[i]) {
+            return 1;
+        }else if(src[i] < dst[i]){
+			return -1;
+		}
+    }
+
+	return 0;
+}
+
+void memset(void* _src, char val, int len)
+{
+	char* src = _src;
+	int i = 0;
+
+    for (i = 0; i < len; i++) {
+        src[i] = val;
+    }
+}
+ 
+unsigned strlen(const char* str)
+{
+	int count = 0;
+    while (*str++) {
+        count++;
+    }
+	return count;
+}
+
+char* strcpy(char* dst, const char* src)
+{
+    while (*dst++ = *src++);
+
+    return dst;
+}
+
+char* strstr(const char* src, const char* str)
+{
+	// FIXME
+	return NULL;
+}
+
+char* strrev(char *src)
+{
+	int len = strlen(src);
+	int mid = len / 2;
+	int i = 0;
+
+    for (i = 0; i < mid; i++) {
+        char tmp = src[i];
+		src[i] = src[len - i -1];
+		src[len - i - 1] = tmp;
+    }
+}
+
+int strcmp(char* src, char* dst)
+{
+	int src_len = strlen(src);
+	int dst_len = strlen(dst);
+	int len = src_len > dst_len ? dst_len : src_len;
+	int i = 0;
+
+    for (i = 0; i < len; i++) {
+        if (src[i] > dst[i]) {
+            return 1;
+        }else if(src[i] < dst[i]){
+			return -1;
+		}
+    }
+
+    if (src_len > len) {
+        return 1;
+    }else if(dst_len > len){
+		return -1;
+	}else{
+		return 0;
+	}
+}
+
+void printf(const char* str, ...)
+{
+	va_list ap;
+	va_start(ap, str);
+	vprintf(str,ap);
+	va_end(ap);
+}
+
+void vprintf(const char* src, va_list ap)
+{
+	int len = strlen(src);
+	int i = 0;
+
+    for (i = 0; i < len; i++) {
+        char cur = src[i];
+        if (cur == '%') {
+			cur = src[i+1];
+            switch (cur) {
+			case '%':
+				klib_putchar(src[i+1]);
+				break;
+			case 'd':
+				{
+					int arg = va_arg(ap, int);
+					char* s = itoa(arg, 10, 1);
+					klib_print(s);
+					kfree(s);
+					break;
+				}
+			case 'x':
+			case 'p':
+				{
+					int arg = va_arg(ap, int);
+					char* s = itoa(arg, 16, 0);
+					klib_print(s);
+					kfree(s);
+					break;
+				}
+			case 'u':
+				{
+					int arg = va_arg(ap, int);
+					char* s = itoa(arg, 10, 0);
+					klib_print(s);
+					kfree(s);
+					break;
+				}
+			case 's':
+				{
+					char* arg = va_arg(ap, char*);
+					klib_print(arg);
+					break;
+				}
+			default:
+				{
+					klib_putchar('?');
+				}
+            }
+			i++;
+        }else{
+			klib_putchar(cur);
+		}
+    }
+}
+
+static char _num(int i){
+
+    if (i < 0) {
+        i = 0 - i;
+    }
+    if (i >= 0 && i < 10) {
+        return i + '0';
+    }
+
+	return (i - 10) + 'a';
+}
+
+char* itoa(int num, int base, int sign)
+{
+	int str_len = 12;
+	char* str = kmalloc(12);
+	char* ret = str;
+	int left = num;
+    unsigned uleft = num;
+	int cur = 0;
+    unsigned ucur = 0;
+	char *begin;
+
+	memset(str, 0, 12);
+
+    if (base != 10 && base != 16) {
+		kfree(str);
+        return NULL;
+    }
+
+
+	if ((base == 10) && sign && left < 0) {
+		str[0] = '-';
+		str++;
+		left = (0 - left);
+	}else if(base == 16){
+		str[0] = '0';
+		str[1] = 'x';
+		str += 2;
+	}
+
+	begin = str;
+    if (sign && (base != 16)) {
+        while (left) {
+            cur = left % base;
+            *str = _num(cur);
+            str++;
+            left = left / base;
+        }
+    }else{
+        while (uleft) {
+            ucur = uleft % base;
+            *str = _num(ucur);
+            str++;
+            uleft = uleft / base;
+        }
+    }
+
+	strrev(begin);
+
+	return ret;
+}
 
 

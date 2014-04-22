@@ -1,6 +1,6 @@
 CC		= /opt/local/bin/i386-elf-gcc
 ASM		= /opt/local/bin/nasm
-CFLAGS	= -m32 -c -fno-stack-protector
+CFLAGS	= -m32 -c -fno-stack-protector -fno-builtin
 ASFLAGS	= -f elf32
 LD		= /opt/local/bin/i386-elf-ld
 LDFILE	= -m elf_i386 -T link.ld -e 0x100010

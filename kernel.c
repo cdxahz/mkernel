@@ -30,10 +30,17 @@ _START void kmain(multiboot_info_t* mb, unsigned int magic)
 
 void kmain_startup()
 {
-	char* msg = NULL;
+    int _cr0 = 0;
     klib_init();
-	int_diags();
+	
 	kb_init();
+
+    // now we are debuggable
+    // printf("hello from %d, %u, %x, %s\n", -100, -100, -100, "world");
+
+
+    int_diags();
+
 	run();
 }
 
@@ -47,13 +54,10 @@ _START static void init(multiboot_info_t* mb)
 
     mm_init(mb);
 	
-	// int_diags();
 	
 	// never to here
 	return;
 
-    // Here we can access all virtual memory
-	kb_init();
 }
 
 static void run()
@@ -69,5 +73,7 @@ static void run()
 			count = 0;
 	}
 	*/
-	while(1);
+	while(1){
+        __asm__("nop");
+    }
 }

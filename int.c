@@ -160,48 +160,40 @@ _START void int_init()
 
 void int_diags()
 {
-	int _cr0;
-    int _cr3;
-	int a20;
-    int cs;
-    int ds;
-    int esp;
-    int eip;
+	int _cr0 = 0;
+    int _cr3 = 0;
+	int a20 = 0;
+    int cs = 0 ;
+    int ds = 0;
+    int esp = 0;
+    int eip = 0;
     unsigned long addr;
     unsigned mem;
 	// output cr0
 	__asm__( "movl %%cr0, %0" : "=r"(_cr0) );
-	klib_print("cr0: ");
-	klib_putint(_cr0);
-	klib_print("\n---------------\n");
+    printf("cr0: %x\n", _cr0);
+	printf("---------------\n");
 
-	klib_print("\t protected mode enabled: ");
-	klib_putint( _cr0 & 0x1);
-	klib_print("\n\t paging enabled: ");
-	klib_putint( _cr0 & 0x80000000);
-    klib_print("\n");
+	printf("\t protected mode enabled: %d\n", _cr0 & 0x1);
+	printf("\t paging enabled: %x\n", _cr0 & 0x80000000);
+
 
 	__asm__( "movl %%cr3, %0" : "=r"(_cr3));
-    klib_print("cr3: ");
-    klib_putint(_cr3);
+    printf("cr3: %x\n", _cr3);
 
     __asm__( "movl %%cs, %0" : "=r"(cs));
-    klib_print("\ncs: ");
-    klib_putint(cs);
+    printf("cs: %x\n", cs);
 
     __asm__( "movl %%fs, %0" : "=r"(ds));
-    klib_print("\nds: ");
-    klib_putint(ds);
+    printf("ds: %x\n", ds);
 
     __asm__( "movl %%esp, %0" : "=r"(esp));
-    klib_print("\nesp: ");
-    klib_putint(esp);
+    printf("esp: %x\n", esp);
 
 
 	// output A20
 	a20 = read_port(0x92);
-	klib_print("\na20: ");
-	klib_putint(a20);
+	printf("a20: %x\n", a20);
 
 
     // start function address
