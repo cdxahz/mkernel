@@ -171,29 +171,29 @@ void int_diags()
     unsigned mem;
 	// output cr0
 	__asm__( "movl %%cr0, %0" : "=r"(_cr0) );
-    printf("cr0: %x\n", _cr0);
+    printf("cr0: \t%x\n", _cr0);
 	printf("---------------\n");
 
-	printf("\t protected mode enabled: %d\n", _cr0 & 0x1);
-	printf("\t paging enabled: %x\n", _cr0 & 0x80000000);
+	printf("\t\tprotected mode enabled: %d\n", (_cr0 & 0x1) != 0);
+	printf("\t\tpaging enabled: %d\n", (_cr0 & 0x80000000) != 0  );
 
 
 	__asm__( "movl %%cr3, %0" : "=r"(_cr3));
-    printf("cr3: %x\n", _cr3);
+    printf("cr3: \t%x\n", _cr3);
 
     __asm__( "movl %%cs, %0" : "=r"(cs));
-    printf("cs: %x\n", cs);
+    printf("cs: \t%x\n", cs);
 
     __asm__( "movl %%fs, %0" : "=r"(ds));
-    printf("ds: %x\n", ds);
+    printf("ds: \t%x\n", ds);
 
     __asm__( "movl %%esp, %0" : "=r"(esp));
-    printf("esp: %x\n", esp);
+    printf("esp: \t%x\n", esp);
 
 
 	// output A20
 	a20 = read_port(0x92);
-	printf("a20: %x\n", a20);
+	printf("a20: \t%x\n", a20);
 
 
     // start function address

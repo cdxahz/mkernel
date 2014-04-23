@@ -1,6 +1,6 @@
 CC		= gcc
 ASM		= nasm
-CFLAGS	= -m32 -c -fno-stack-protector
+CFLAGS	= -m32 -c -fno-stack-protector -fno-builtin
 ASFLAGS	= -f elf32
 LD		= ld
 LDFILE	= -m elf_i386 -T link.ld -e 0x100010

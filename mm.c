@@ -16,7 +16,6 @@ static unsigned long long phy_mem_high;
 _STARTDATA static unsigned long long _phy_mem_low;
 _STARTDATA static unsigned long long _phy_mem_high;
 
-_STARTDATA static char msg[] = "hello";
 
 _START void mm_init(multiboot_info_t* mb)
 {
@@ -116,7 +115,11 @@ _START static void mm_get_phy_mem_bound(multiboot_info_t* mb)
 #define RELOAD_EIP() \
 	__asm__ ("jmp 1f \n1:\n\tmovl $1f,%eax\n\tjmp *%eax \n1:\n\tnop");
 
-
+#define RELOAD_ESP(OFFSET) \
+	__asm__ ("movl %esp, %ecx");\
+	__asm__ ("addl %0, %%ecx" : : "i" (OFFSET));\
+	__asm__ ("movl %ecx, %esp");
+	
 
 _START static void simulate_paging(unsigned address)
 {
@@ -153,6 +156,7 @@ static void mm_high_memory_fun()
 	RELOAD_EIP();
 	phy_mem_high = _phy_mem_high;
 	phy_mem_low = _phy_mem_low;
+	RELOAD_ESP(KERNEL_OFFSET);
 	extern kmain_startup();
 	kmain_startup();
 }
