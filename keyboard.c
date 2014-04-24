@@ -2,9 +2,13 @@
 #include "klib.h"
 #include "int.h"
 #include "keymap.h"
+#include "dsr.h"
+
 static int shift_on = 0;
 static int ctrl_on = 0;
 static int alt_on = 0;
+
+static void kb_dsr(void* param);
 
 void kb_init()
 {
@@ -12,6 +16,12 @@ void kb_init()
 }
 
 void kb_process()
+{
+	dsr_add(kb_dsr, 0);
+}
+
+
+static void kb_dsr(void* param)
 {
 	unsigned char c = read_port(KB_DATA);
 	int key_down = 0;

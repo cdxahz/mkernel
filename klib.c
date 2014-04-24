@@ -6,13 +6,22 @@ static int cursor = 0;
 #define CUR_ROW (cursor / TTY_MAX_COL)
 #define CUR_COL (cursor % TTY_MAX_COL)
 
+// following for malloc/free
+static unsigned int cur_block_top = KHEAP_BEGIN;
+static kblock free_list[513] = { 0 }; 
+static unsigned int kblk(unsigned page_count);
+static void klib_add_to_free_list(int index, kblock* buf, int force_merge);
+
 static void klib_cursor_forward(int new_pos);
+static unsigned int klib_random_num = 1;
 
 void klib_init()
 {
 	tty_init();
-
+	
+	klib_random_num = 1;
 	cursor = 0;
+	cur_block_top = KHEAP_BEGIN;
 }
 
 
@@ -111,14 +120,10 @@ char *klib_itoa(char *str, int num)
   return str;  
 }
 
-// following for malloc/free
-static unsigned int cur_block_top = KHEAP_BEGIN;
-static kblock free_list[513] = { 0 }; 
-static unsigned int kblk(unsigned page_count);
-static void klib_add_to_free_list(int index, kblock* buf);
 
 
 
+//// 
 
 void* kmalloc(unsigned size)
 {
@@ -128,12 +133,13 @@ void* kmalloc(unsigned size)
 	int index = 0;
 	int sliced = 0;
 
-	if (size > (PAGE_SIZE)) // that's too large
+	if (free_list_index > 511) // that's too large
 		return NULL;
 
 	if (size == 0)
 		return NULL;
 
+	//log("[malloc] malloc %d ", free_list_index);
 	if (free_list_head->next == NULL){
 		for (index = free_list_index + 1; index <= 512; index++){
 			int borrow_size, left_count;
@@ -145,16 +151,16 @@ void* kmalloc(unsigned size)
 			borrow_size = free_list_index;
 			left_count = index - borrow_size;
 
-			if (left_count < 2)
+			if (left_count < 1)
 				continue;
 
 			addr = (kblock*)free_list[index].next;
 			free_list[index].next = addr->next;
 			addr->next = 0;
-
-			klib_add_to_free_list(free_list_index, (void*)addr);
+			//log("[split] %d split into %d + %d", index, free_list_index, left_count - 1);
+			klib_add_to_free_list(free_list_index, (void*)addr, 0);
 			left_index = left_count - 1;
-			klib_add_to_free_list(left_index, (void*)((unsigned int)addr + 8 * (borrow_size + 1)));
+			klib_add_to_free_list(left_index, (void*)((unsigned int)addr + 8 * (borrow_size + 1)), 0);
 
 			break;
 		}
@@ -163,15 +169,21 @@ void* kmalloc(unsigned size)
 			int left_index;
 			int borrow_size = free_list_index;
 			unsigned int vir = kblk(1);
-			klib_add_to_free_list(free_list_index, (void*)vir);
-			left_index = (PAGE_SIZE / 8) - free_list_index - 1;
-			klib_add_to_free_list(left_index, (void*)((unsigned int)vir + 8 * (borrow_size + 1)));
+			int left_count;
+			if (vir == 0)
+				return NULL;
+			index = 511;
+			left_count = index - free_list_index;
+			//log("[split] %d split into %d + %d", index, free_list_index, left_count - 1);
+			klib_add_to_free_list(free_list_index, (void*)vir, 0);
+			left_index = index - free_list_index - 1;
+			klib_add_to_free_list(left_index, (void*)((unsigned int)vir + 8 * (borrow_size + 1)), 0);
 		}
 	}
 
 	if (free_list_head->next != NULL){
 		kblock * block = free_list_head->next;
-		free_list_head->next = free_list_head->next->next;
+		free_list_head->next = block->next;
 		block->next = 0;
 		block->size = size;
 		ret = (unsigned int)block;
@@ -193,11 +205,13 @@ void kfree(void* buf)
 	if (buf == NULL)
 		return;
 
+
 	block = (kblock*)((unsigned int)buf - 8);
 	size = block->size;
 	free_list_index = size / 8 + 1;
 
-	klib_add_to_free_list(free_list_index, block);
+
+	klib_add_to_free_list(free_list_index, block, 1);
 }
 
 
@@ -205,39 +219,49 @@ static unsigned int kblk(unsigned page_count)
 {
 	unsigned ret = cur_block_top;
 
+	//klib_putint(cur_block_top);
+	
 	if (page_count == 0)
 		return 0;
 
-	if (cur_block_top + page_count * PAGE_SIZE >= KHEAP_END)
+	if (cur_block_top + page_count * PAGE_SIZE >= KHEAP_END){
+		klib_print("buffer overflow\n");
+		klib_info("cur_block_top: ", cur_block_top, "\n");
+		klib_info("page_count: ", page_count, "\n");
+		klib_info("KHEAP_BEGIN: ", KHEAP_BEGIN, "\n");
+		klib_info("KHEAP_END: ", KHEAP_END, "\n");
 		return 0;
+	}
 
 	cur_block_top += page_count * PAGE_SIZE;
-	//printf("BUTTON %p, TOP %p, current %p, used %d(pages)\n", KHEAP_BEGIN, KHEAP_END, cur_block_top,
-	//	(cur_block_top - KHEAP_BEGIN) / (PAGE_SIZE));
+
+#ifdef TEST_MALLOC
+	klib_info("cur_block_top: ", cur_block_top, "\n");
+#endif
 
 	return ret;
 }
 
+static int klib_same_page(unsigned addr1, unsigned addr2)
+{
+	return ((addr1 & 0xfffff000) == (addr2 & 0xfffff000));
+}
 
-static void klib_add_to_free_list(int index, kblock* buf)
+static int klib_free_list_merge(int node_index, kblock* buf, int target)
 {
 	kblock *head = NULL;
 	kblock *node = NULL;
 	kblock *pre = NULL;
 	kblock *ppre = NULL;
 
+	int merged = 0;
+	int merged_index = 0;
+
 	unsigned int pre_addr = (unsigned int)pre;
 	unsigned int node_addr = (unsigned int)node;
 	unsigned int buf_addr = (unsigned int)buf;
 
-	int merged = 0;
-	int merged_index = 0;
-
-	if (index <= 0 || index > 512)
-		return;
-
-
-	head = &free_list[index];
+	head = &free_list[target];
 
 	node = head->next;
 	pre = head;
@@ -258,30 +282,74 @@ static void klib_add_to_free_list(int index, kblock* buf)
 	buf_addr = (unsigned int)buf;
 
 	if (pre != head){
-		merged_index = index * 2 + 1;
-		if ((pre_addr + 8 * (index + 1) == buf_addr) && (merged_index <= 512)){
+		merged_index = node_index + target + 1;
+		if ((pre_addr + 8 * (target + 1) == buf_addr) && (merged_index <= 511) &&
+			klib_same_page(pre_addr, buf_addr) ){
 			// merge pre
 			ppre->next = node;
 			buf->next = NULL;
 			pre->next = NULL;
-			klib_add_to_free_list(merged_index, pre);
+			klib_add_to_free_list(merged_index, pre, 1);
 			merged = 1;
-			//printf("[pre+buf]two %d blocks merged into %d block\n", index, merged_index);
+			//log("[pre+buf] %d + %d blocks merged into %d block\n", target, node_index, merged_index);
 		}
-	} 
+	}
 
 	if (!merged && node != NULL){
-		merged_index = index * 2 + 1;
-		if ((buf_addr + 8 * (index + 1) == node_addr) && (merged_index <= 512)){
-			// merge node
+		merged_index = node_index + target + 1;
+		if ((buf_addr + 8 * (node_index + 1) == node_addr) && (merged_index <= 511) &&
+			klib_same_page(buf_addr, node_addr)){
 			pre->next = node->next;
 			buf->next = NULL;
 			node->next = NULL;
-			klib_add_to_free_list(merged_index, buf);
+			klib_add_to_free_list(merged_index, buf, 1);
 			merged = 1;
-			//printf("[buf+node]two %d blocks merged into %d block\n", index, merged_index);
+			//log("[buf+node] %d + %d  blocks merged into %d block\n", node_index, target, merged_index);
 		}
 	}
+
+	return merged;
+}
+
+
+static void klib_add_to_free_list(int index, kblock* buf, int force_merge)
+{
+	kblock *head = NULL;
+	kblock *node = NULL;
+	kblock *pre = NULL;
+
+
+	int merged = 0;
+	int merged_index = 0;
+
+	if (index < 0 || index > 511){
+		return;
+	}
+
+	if (force_merge){
+		for (merged_index = 0; merged_index < 511; merged_index++){
+			merged = klib_free_list_merge(index, buf, merged_index);
+			if (merged)
+				return;
+		}
+	}
+
+
+	head = &free_list[index];
+
+	node = head->next;
+	pre = head;
+	while (node){
+		unsigned int addr = (unsigned int)node;
+		unsigned int inserted = (unsigned int)buf;
+		if (addr > inserted){
+			break;
+		}
+		pre = node;
+		node = node->next;
+	}
+
+
 
 	if (!merged){
 		pre->next = (kblock*)buf;
@@ -289,6 +357,8 @@ static void klib_add_to_free_list(int index, kblock* buf)
 	}
 
 }
+
+////
 
 void memcpy(void* _src, void* _dst, unsigned len)
 {
@@ -472,9 +542,7 @@ void vprintf(const char* src, va_list ap)
 
 static char _num(int i){
 
-    if (i < 0) {
-        i = 0 - i;
-    }
+
     if (i >= 0 && i < 10) {
         return i + '0';
     }
@@ -494,6 +562,11 @@ char* itoa(int num, int base, int sign)
 	char *begin;
 
 	memset(str, 0, 12);
+	
+	if (uleft == 0x80000000){ // this is a special number, that x == -x
+		strcpy(str, "0x80000000");
+		return str;
+	}
 
     if (base != 10 && base != 16) {
 		kfree(str);
@@ -534,3 +607,21 @@ char* itoa(int num, int base, int sign)
 }
 
 
+
+
+
+void klib_srand(unsigned _seed)
+{
+	klib_random_num = _seed;
+}
+
+unsigned int klib_rand()
+{
+	unsigned int ret = klib_random_num * 0x343fd;
+	ret += 0x269EC3;
+	klib_random_num = ret;
+	ret = klib_random_num;
+	ret >>= 0x10;
+	ret = ret & 0x7fff;
+	return ret;
+}

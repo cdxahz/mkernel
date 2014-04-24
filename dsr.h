@@ -1,8 +1,7 @@
 #ifndef _DSR_H_
 #define _DSR_H_
 
-typedef struct _LIST_ENTRY LIST_ENTRY;
-typedef LIST_ENTRY * PLIST_ENTRY;
+#include "list.h"
 
 typedef void (*dsr_callback)(void* param);
 

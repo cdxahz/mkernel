@@ -7,6 +7,19 @@
 * 需要指定boot的代码到0x100000开始的地址，其他倒0xc0000000+0x100000开始的地址。在链接脚本里做手脚。
 	- 之所以大家都把boot的代码全写成一个汇编函数，是因为这样最省力（不用每个函数都指定boot section)
 	- __attribute__((section("section_name")))
+* 创建/加载 磁盘
+	1) 创建rootfs img
+	qemu-img create rootfs.img 5G 
+	mkfs.ext3 -b 2048 rootfs.img 
+	sudo mount -o loop rootfs.img /mnt
+	// copy your program in /bin of rootfs
+	sudo umount -l /mnt
+	// if loop device busy, try `fuser -m /mnt`
+	2) 加载rootfs
+	qemu -kernel kernel -hda rootfs.img
+
+
+---------	
 from grub:
 When the boot loader invokes the 32-bit operating system, the machine must have the following state:
 
