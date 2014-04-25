@@ -65,16 +65,16 @@ These are the interrupted task's saved registers. */
     unsigned int vec_no; /* Interrupt vector number. */
 
     /* Sometimes pushed by the CPU,
-otherwise for consistency pushed as 0 by intrNN_stub.
-The CPU puts it just under `eip', but we move it here. */
+    otherwise for consistency pushed as 0 by intrNN_stub.
+    The CPU puts it just under `eip', but we move it here. */
     unsigned int error_code; /* Error code. */
 
     /* Pushed by intrNN_stub in intr-stubs.S.
-This frame pointer eases interpretation of backtraces. */
+    This frame pointer eases interpretation of backtraces. */
     void *frame_pointer; /* Saved EBP (frame pointer). */
 
     /* Pushed by the CPU.
-These are the interrupted task's saved registers. */
+    These are the interrupted task's saved registers. */
     void (*eip) (void); /* Next instruction to execute. */
     unsigned short cs, :16; /* Code segment for eip. */
     unsigned int eflags; /* Saved CPU flags. */
@@ -104,4 +104,13 @@ void int_enable_all();
 typedef void (*int_callback)(intr_frame* frame);
 
 void int_register(int vec_no, int_callback fn, int is_trap, int dpl);
+
+void int_unregister(int vec_no);
+
+unsigned int_is_intr_enabled();
+
+unsigned int_intr_enable();
+
+unsigned int_intr_disable();
+
 #endif

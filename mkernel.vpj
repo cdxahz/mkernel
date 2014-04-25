@@ -66,6 +66,7 @@
 			<F N="list.h"/>
 			<F N="mm.h"/>
 			<F N="multiboot.h"/>
+			<F N="timer.h"/>
 			<F N="tty.h"/>
 		</Folder>
 		<Folder
@@ -91,6 +92,7 @@
 			<F N="klib.c"/>
 			<F N="list.c"/>
 			<F N="mm.c"/>
+			<F N="timer.c"/>
 			<F N="tty.c"/>
 		</Folder>
 	</Files>

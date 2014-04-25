@@ -1,5 +1,6 @@
 #include "klib.h"
 #include "tty.h"
+#include "timer.h"
 
 
 static int cursor = 0;
@@ -42,6 +43,8 @@ _START void klib_putchar(char c)
 			klib_putchar(' ');
 		
 		new_pos = cursor;
+    } else if (c  == '\r') {
+		new_pos = ROW_COL_TO_CUR(CUR_ROW, 0);
 	}else{
 		tty_putchar( CUR_ROW, CUR_COL, c);
 		new_pos = cursor + 1;
@@ -489,6 +492,17 @@ char* strcat(char* src, char* msg)
 void printf(const char* str, ...)
 {
 	va_list ap;
+	va_start(ap, str);
+	vprintf(str,ap);
+	va_end(ap);
+}
+
+void printk(const char* str, ...)
+{
+	va_list ap;
+	time_t time;
+	timer_current(&time);
+	printf("[%d.%d] ", time.seconds, time.milliseconds);
 	va_start(ap, str);
 	vprintf(str,ap);
 	va_end(ap);

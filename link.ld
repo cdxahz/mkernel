@@ -38,13 +38,13 @@ SECTIONS
 	}
 
 	/* Read-write data (initialized) */
-	.data BLOCK(4K) : AT(0x204000)
+	.data BLOCK(4K) : AT(0x205000)
 	{
 		*(.data)
 	}
 
 	/* Read-write data (uninitialized) and stack */
-	.bss BLOCK(4K) : AT(0x205000)
+	.bss BLOCK(4K) : AT(0x206000)
 	{
 		*(COMMON)
 		*(.bss)

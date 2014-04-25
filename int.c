@@ -113,6 +113,17 @@ void int_register(int vec_no, int_callback fn, int is_trap, int dpl)
 	in_callbacks[vec_no] = fn;
 }
 
+void int_unregister(int vec_no)
+{
+    if (vec_no < 0 || vec_no >= IDT_SIZE){
+		printf("fatal error: vec number %x invalid!!\n", vec_no);
+		return;
+	}
+
+    in_callbacks[vec_no] = 0;
+    virtual_idt[vec_no] = 0;
+}
+
 void
 intr_handler (intr_frame *frame)
 {
@@ -134,6 +145,7 @@ intr_handler (intr_frame *frame)
 	if (external)
 		pic_end_of_interrupt(frame->vec_no);
 }
+
 
 
 void int_enable_all()
@@ -330,5 +342,36 @@ void int_diags()
 
     // start function address
 
+}
+
+#define GET_INTR_FLAG(flag)\
+    __asm__("pushfl"); \
+    __asm__("popl %0" : "=q"(flag));
+
+unsigned int_is_intr_enabled()
+{
+    unsigned int flags;
+
+    GET_INTR_FLAG(flags);
+
+    return (flags & 0x00000200) == 0x00000200 ;
+}
+
+unsigned int_intr_enable()
+{
+    unsigned old = int_is_intr_enabled();
+
+    __asm__("sti");
+
+    return old;
+}
+
+unsigned int_intr_disable()
+{
+    unsigned old = int_is_intr_enabled();
+
+    __asm__("cli" : : : "memory");
+
+    return old;
 }
 

@@ -1,7 +1,4 @@
-/*
-* Copyright (C) 2014  Arjun Sreedharan
-* License: GPL version 2 or higher http://www.gnu.org/licenses/gpl.html
-*/
+
 #include "klib.h"
 #include "int.h"
 #include "keyboard.h"
@@ -73,7 +70,7 @@ extern unsigned long long *virtual_idt;
 void kmain_startup()
 {
     int i = 0;
-    klib_init();
+    
 	
 	int_enable_all();
 
@@ -91,6 +88,8 @@ void kmain_startup()
 	kb_init();
 
 	timer_init();
+
+    klib_init();
 	
     // now we are debuggable
     // printf("hello from %d, %u, %x, %s\n", -100, -100, -100, "world");
