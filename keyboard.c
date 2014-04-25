@@ -12,10 +12,10 @@ static void kb_dsr(void* param);
 
 void kb_init()
 {
-	write_port( 0x21 , 0xFD ) ;
+	int_register(0x21, kb_process, 0, 0); 
 }
 
-void kb_process()
+void kb_process(intr_frame *frame)
 {
 	dsr_add(kb_dsr, 0);
 }
@@ -54,15 +54,24 @@ static void kb_dsr(void* param)
 	// FIXME, file a DSR instead of doing at this context
 	// This is a temp way to shutdown, in order to debug through ssh
 	static q_count = 0;
+	static w_count = 0;
 	if (c == KEY_Q && key_down)
 		q_count++;
-	else if(c != KEY_Q)
+	else if (c == KEY_W && key_down)
+		w_count++;
+	
+	if(c != KEY_Q && key_down)
 		q_count = 0;
+	
+	if(c != KEY_W && key_down)
+		w_count = 0;
 
 	if ( q_count >= 10 ){
-		// shutdown
-		klib_print("shutdown\n");
 		shutdown();
+	}
+
+	if (w_count >= 10){
+		reboot();
 	}
 }
 

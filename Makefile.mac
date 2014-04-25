@@ -7,14 +7,14 @@ LDFILE	= -m elf_i386 -T link.ld -e 0x100010
 LDFLAGS	= $(LDFILE)
 TARGET	= kernel
 
-all: boot.o kernel.o tty.o klib.o int.o interrupt.o keyboard.o list.o dsr.o mm.o
-	$(LD) $(LDFLAGS) -o $(TARGET) boot.o kernel.o tty.o klib.o int.o keyboard.o interrupt.o list.o dsr.o mm.o
+all: boot.o kernel.o tty.o klib.o int.o interrupt.o keyboard.o list.o dsr.o mm.o timer.o
+	$(LD) $(LDFLAGS) -o $(TARGET) boot.o kernel.o tty.o klib.o int.o keyboard.o interrupt.o list.o dsr.o mm.o timer.o
 
 boot.o: kernel.asm
 	$(ASM) $(ASFLAGS) kernel.asm -o boot.o
 
-int.o: int.asm
-	$(ASM) $(ASFLAGS) int.asm -o int.o
+int.o: int.S
+	$(CC) $(CFLAGS) int.S -o int.o
 
 interrupt.o: int.c int.h
 	$(CC) $(CFLAGS) int.c -o interrupt.o 
@@ -39,6 +39,9 @@ dsr.o: dsr.c dsr.h
 
 mm.o: mm.c mm.h multiboot.h
 	$(CC) $(CFLAGS) -o mm.o mm.c
+
+timer.o: timer.c timer.h
+	$(CC) $(CFLAGS) -o timer.o timer.c
 
 clean:
 	-rm *.o

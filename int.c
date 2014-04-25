@@ -21,29 +21,161 @@ _START static void init_interrupt()
   write_port( 0xA1 , 0xFF ) ;
 }
 
-_STARTDATA static segment_desc idt[ IDT_SIZE ] ; 
-_STARTDATA static unsigned long idt_desc[ 2 ] ;
+_STARTDATA static unsigned long long idt[ IDT_SIZE ] ; 
+_STARTDATA static unsigned long long idt_desc ;
+
+unsigned long long *virtual_idt;
+unsigned long long virtual_idt_desc;
+
+_START static unsigned long long
+make_gate (void (*function) (void), int dpl, int type)
+{
+  unsigned int e0, e1;
+
+
+  e0 = (((unsigned int) function & 0xffff) /* Offset 15:0. */
+        | (KERNEL_CODE_SELECTOR << 16)); /* Target code segment. */
+
+  e1 = (((unsigned int) function & 0xffff0000) /* Offset 31:16. */
+        | (1 << 15) /* Present. */
+        | ((unsigned int) dpl << 13) /* Descriptor privilege level. */
+        | (0 << 12) /* System. */
+        | ((unsigned int) type << 8)); /* Gate type. */
+
+  return e0 | ((unsigned long long) e1 << 32);
+}
+
+/* Creates an interrupt gate that invokes FUNCTION with the given
+DPL. */
+_START static unsigned long long
+make_intr_gate (void (*function) (void), int dpl)
+{
+  return make_gate (function, dpl, 14);
+}
+
+/* Creates a trap gate that invokes FUNCTION with the given
+DPL. */
+_START static unsigned long long
+make_trap_gate (void (*function) (void), int dpl)
+{
+  return make_gate (function, dpl, 15);
+}
+
+/* Returns a descriptor that yields the given LIMIT and BASE when
+used as an operand for the LIDT instruction. */
+_START static  unsigned long long
+make_idtr_operand (unsigned short limit, void *base)
+{
+  return limit | ((unsigned long long) (unsigned int) base << 16);
+}
+
+
+extern _STARTDATA unsigned long intr_stubs[IDT_SIZE];
+unsigned long *virtual_intr_stubs;
 
 _START static void setup_idt()
 {
-    unsigned long keyboard_addr ;
-    unsigned long idt_addr ;
+	int i = 0;
+	for (i = 0; i < IDT_SIZE; i++){
+		idt[i] = make_intr_gate (intr_stubs[i], 0);
+	}
+}
 
-    unsigned long code_selector = KERNEL_CODE_SELECTOR ; 
-    // setup keyboard
+/* Sends an end-of-interrupt signal to the PIC for the given IRQ.
+If we don't acknowledge the IRQ, it will never be delivered to
+us again, so this is important. */
+static void
+pic_end_of_interrupt (int irq)
+{
 
-    keyboard_addr = ( unsigned long )asm_interrupt_handle_for_keyboard ; 
-    idt[ 0x21 ].dword0 = ( keyboard_addr & 0xffff ) | ( code_selector << 16 ) ;
-    idt[ 0x21 ].dword1 = ( keyboard_addr & 0xffff0000 ) | 0x8e00 ;
+  /* Acknowledge master PIC. */
+  write_port (0x20, 0x20);
+
+  /* Acknowledge slave PIC if this is a slave interrupt. */
+  if (irq >= 0x28)
+    write_port (0xa0, 0x20);
+}
+
+static char* intr_names[IDT_SIZE];
+static int_callback in_callbacks[IDT_SIZE];
+
+void int_register(int vec_no, int_callback fn, int is_trap, int dpl)
+{
+	if (vec_no < 0 || vec_no >= IDT_SIZE)
+	  return;
+	
+	if (is_trap){
+		virtual_idt[vec_no] = make_trap_gate(virtual_intr_stubs[vec_no], dpl);
+	}else{
+		virtual_idt[vec_no] = make_intr_gate(virtual_intr_stubs[vec_no], dpl);
+	}
+
+	in_callbacks[vec_no] = fn;
+}
+
+void
+intr_handler (intr_frame *frame)
+{
+	// printf("interrupt: [%x] %s\n", frame->vec_no, intr_names[frame->vec_no]);
+	int external = frame->vec_no >= 0x20 && frame->vec_no < 0x30;
+	int_callback fn = 0;
+	
+	if (frame->vec_no < 0 || frame->vec_no >= IDT_SIZE){
+		printf("fatal error: vec number %x invalid!!\n", frame->vec_no);
+		return;
+	}
+
+	fn = in_callbacks[frame->vec_no];
+	if(fn)
+	  fn(frame);
+	else
+	  printf("int %x: %s", frame->vec_no, intr_names[frame->vec_no]);
+
+	if (external)
+		pic_end_of_interrupt(frame->vec_no);
+}
 
 
-    idt_addr = ( unsigned long )idt ;
-    idt_desc[ 0 ] = 0x800 + ( ( idt_addr & 0xffff ) << 16 ) ;
-    idt_desc[ 1 ] = idt_addr >> 16 ;
+void int_enable_all()
+{
+	int i = 0;
+	virtual_intr_stubs = (unsigned int)intr_stubs + KERNEL_OFFSET;
+	virtual_idt = (unsigned int)idt + KERNEL_OFFSET;
+	virtual_idt_desc = make_idtr_operand (sizeof idt - 1, virtual_idt);
+	__asm__ volatile ("lidt %0\nsti" : : "m" (virtual_idt_desc));
 
-    __asm__( "lidt %0\n""sti" : "=m"( idt_desc ) ) ; 
+  write_port( 0x21 , 0x0 ) ;
+  write_port( 0xA1 , 0x0 ) ;
+	
+	/* Initialize intr_names. */
+  for (i = 0; i < IDT_SIZE; i++){
+	intr_names[i] = "unknown";
+	in_callbacks[i] = 0;
+  }
+  intr_names[0] = "#DE Divide Error";
+  intr_names[1] = "#DB Debug Exception";
+  intr_names[2] = "NMI Interrupt";
+  intr_names[3] = "#BP Breakpoint Exception";
+  intr_names[4] = "#OF Overflow Exception";
+  intr_names[5] = "#BR BOUND Range Exceeded Exception";
+  intr_names[6] = "#UD Invalid Opcode Exception";
+  intr_names[7] = "#NM Device Not Available Exception";
+  intr_names[8] = "#DF Double Fault Exception";
+  intr_names[9] = "Coprocessor Segment Overrun";
+  intr_names[10] = "#TS Invalid TSS Exception";
+  intr_names[11] = "#NP Segment Not Present";
+  intr_names[12] = "#SS Stack Fault Exception";
+  intr_names[13] = "#GP General Protection Exception";
+  intr_names[14] = "#PF Page-Fault Exception";
+  intr_names[16] = "#MF x87 FPU Floating-Point Error";
+  intr_names[17] = "#AC Alignment Check Exception";
+  intr_names[18] = "#MC Machine-Check Exception";
+  intr_names[19] = "#XF SIMD Floating-Point Exception";
+  intr_names[32] = "timer";
+  intr_names[33] = "keyboard";
 
 }
+
 
 /* Returns a segment descriptor with the given 32-bit BASE and
 20-bit LIMIT (whose interpretation depends on GRANULARITY).

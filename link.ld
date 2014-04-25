@@ -32,19 +32,19 @@ SECTIONS
 	}
 
 	/* Read-only data. */
-	.rodata BLOCK(4K) : AT(0x202000)
+	.rodata BLOCK(4K) : AT(0x203000)
 	{
 		*(.rodata)
 	}
 
 	/* Read-write data (initialized) */
-	.data BLOCK(4K) : AT(0x203000)
+	.data BLOCK(4K) : AT(0x204000)
 	{
 		*(.data)
 	}
 
 	/* Read-write data (uninitialized) and stack */
-	.bss BLOCK(4K) : AT(0x204000)
+	.bss BLOCK(4K) : AT(0x205000)
 	{
 		*(COMMON)
 		*(.bss)

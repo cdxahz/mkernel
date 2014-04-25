@@ -58,10 +58,16 @@ char* strrev(char *src);
 
 int strcmp(char* str, char* dst);
 
+char* strcat(char* str, char* msg);
+
 void printf(const char* str, ...);
 
 void vprintf(const char* str, va_list ap);
 
 char* itoa(int num, int base, int sign);
 
+
+// misc
+//
+void shutdown();
 #endif

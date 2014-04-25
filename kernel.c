@@ -8,6 +8,7 @@
 #include "mm.h"
 #include "multiboot.h"
 #include "dsr.h"
+#include "timer.h"
 
 static void run(void);
 _START static void init(multiboot_info_t* mb);
@@ -66,13 +67,30 @@ _START void kmain(multiboot_info_t* mb, unsigned int magic)
 	}
 
 #endif
-
+extern unsigned long *virtual_intr_stubs;
+extern _STARTDATA unsigned long intr_stubs[IDT_SIZE];
+extern unsigned long long *virtual_idt;
 void kmain_startup()
 {
-    int _cr0 = 0;
+    int i = 0;
     klib_init();
 	
+	int_enable_all();
+
+/*
+	printf("intr_stub %x, virtual_intr_stubs %x\n", intr_stubs, virtual_intr_stubs);
+
+	for(i = 0; i < 10; i++)
+		printf("intr[%d] %x\n",i, intr_stubs[i] );
+	
+	for (i = 0; i < 10; i++){
+		int *a = (int*)&(virtual_idt[i]);
+		printf("idt[i] %x %x\n", a[0], a[1]);
+	}
+*/
 	kb_init();
+
+	timer_init();
 	
     // now we are debuggable
     // printf("hello from %d, %u, %x, %s\n", -100, -100, -100, "world");

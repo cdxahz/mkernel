@@ -428,9 +428,10 @@ unsigned strlen(const char* str)
 
 char* strcpy(char* dst, const char* src)
 {
+	char *ret = dst;
     while (*dst++ = *src++);
-
-    return dst;
+	
+    return ret;
 }
 
 char* strstr(const char* src, const char* str)
@@ -450,6 +451,8 @@ char* strrev(char *src)
 		src[i] = src[len - i -1];
 		src[len - i - 1] = tmp;
     }
+
+	return src;
 }
 
 int strcmp(char* src, char* dst)
@@ -474,6 +477,13 @@ int strcmp(char* src, char* dst)
 	}else{
 		return 0;
 	}
+}
+
+char* strcat(char* src, char* msg)
+{
+	char* tmp = src + strlen(src);
+	strcpy(tmp, msg);
+	return src;
 }
 
 void printf(const char* str, ...)
@@ -568,6 +578,14 @@ char* itoa(int num, int base, int sign)
 		return str;
 	}
 
+	if (num == 0){
+		if (base == 10)
+		  strcpy(str, "0");
+		else if(base == 16)
+		  strcpy(str, "0x0");
+		return str;
+	}
+
     if (base != 10 && base != 16) {
 		kfree(str);
         return NULL;
@@ -624,4 +642,36 @@ unsigned int klib_rand()
 	ret >>= 0x10;
 	ret = ret & 0x7fff;
 	return ret;
+}
+
+
+void reboot()
+{
+	// FIXME do formal steps before reboot
+	write_port(0x64, 0xfe);
+}
+
+
+void shutdown()
+{
+  const char s[] = "Shutdown";
+  const char *p;
+
+
+  printf ("Powering off...\n");
+
+
+  /* 	This is a special power-off sequence supported by Bochs and
+		QEMU, but not by physical hardware. */
+  for (p = s; *p != '\0'; p++)
+    write_port (0x8900, *p);
+
+  /* 	This will power off a VMware VM if "gui.exitOnCLIHLT = TRUE"
+		is set in its configuration file. (The "pintos" script does
+		that automatically.) */
+  asm volatile ("cli; hlt" : : : "memory");
+
+  /* None of those worked. */
+  printf ("still running...\n");
+  for (;;);
 }

@@ -2,7 +2,7 @@
  #ifndef _INT_H_
  #define _INT_H_
 
-
+#include "config.h"
 #include "mm.h"
 
 #define  INT_M_CTL     0x20  
@@ -42,35 +42,45 @@
 #define  DA_386IGate       0x8E     
   
  
-#define  KERNEL_PRIVILEGE  0  
-#define  USER_PRIVILEGE    3  
-  
-#define  NULL_SELECTOR           0x0
-#define  KERNEL_DATA_SELECTOR    0x8
-#define  KERNEL_CODE_SELECTOR    0x10
-#define  USER_DATA_SELECTOR      0x18
-#define  USER_CODE_SELECTOR      0x20
-#define  TSS_SELECTOR            0x28 // we are not going to use TSS when task switch, 
-                                      //but we have to make tr register valid or x86 process
-#define  SELECTOR_COUNT          6 // kernel 2 + user 2 + tss 1 + empty
-
-#define  ADDRESS_LIMIT          0xfffff //  always 4k bytes algined, so last 0xfffff means 4G space
-
-#define  SEG_CLASS_DATA         1
-#define  SEG_CLASS_SYSTEM       0       // this is for TSS
-
-#define  SEG_BASE_4K            1       // address count with 4k
-#define  SEG_BASE_1             0       // address count with 1 byte
-
-#define IDT_SIZE 256
-  
-  
  
-typedef struct _segment_desc{
-  unsigned long dword0 ;
-  unsigned long dword1 ;
-} segment_desc ;
+/* Interrupt stack frame. */
+typedef struct _intr_frame
+  {
+    /* Pushed by intr_entry in intr-stubs.S.
+These are the interrupted task's saved registers. */
+    unsigned int edi; /* Saved EDI. */
+    unsigned int esi; /* Saved ESI. */
+    unsigned int ebp; /* Saved EBP. */
+    unsigned int esp_dummy; /* Not used. */
+    unsigned int ebx; /* Saved EBX. */
+    unsigned int edx; /* Saved EDX. */
+    unsigned int ecx; /* Saved ECX. */
+    unsigned int eax; /* Saved EAX. */
+    unsigned short gs, :16; /* Saved GS segment register. */
+    unsigned short fs, :16; /* Saved FS segment register. */
+    unsigned short es, :16; /* Saved ES segment register. */
+    unsigned short ds, :16; /* Saved DS segment register. */
 
+    /* Pushed by intrNN_stub in intr-stubs.S. */
+    unsigned int vec_no; /* Interrupt vector number. */
+
+    /* Sometimes pushed by the CPU,
+otherwise for consistency pushed as 0 by intrNN_stub.
+The CPU puts it just under `eip', but we move it here. */
+    unsigned int error_code; /* Error code. */
+
+    /* Pushed by intrNN_stub in intr-stubs.S.
+This frame pointer eases interpretation of backtraces. */
+    void *frame_pointer; /* Saved EBP (frame pointer). */
+
+    /* Pushed by the CPU.
+These are the interrupted task's saved registers. */
+    void (*eip) (void); /* Next instruction to execute. */
+    unsigned short cs, :16; /* Code segment for eip. */
+    unsigned int eflags; /* Saved CPU flags. */
+    void *esp; /* Saved stack pointer. */
+    unsigned short ss, :16; /* Data segment for esp. */
+  }intr_frame;
 
   
  
@@ -89,5 +99,9 @@ _START unsigned int_get_phymem_size();
 
 void int_diags();
 
+void int_enable_all();
 
+typedef void (*int_callback)(intr_frame* frame);
+
+void int_register(int vec_no, int_callback fn, int is_trap, int dpl);
 #endif
