@@ -10,5 +10,7 @@ else
 	cp Makefile.gnu Makefile
 fi
 
-make
+##make
+
+make ARCH=arm CROSS_COMPILE=/opt/local/bin/arm-none-eabi-
 

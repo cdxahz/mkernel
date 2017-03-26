@@ -5,4 +5,6 @@
 typedef struct _intr_frame intr_frame;
 void kb_init();
 void kb_process(intr_frame *frame);
+
+void handle_keyboard(unsigned char keycode);
 #endif

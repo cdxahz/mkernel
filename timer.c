@@ -33,7 +33,7 @@ static void timer_process(intr_frame* frame)
         hourse = 0;
     }
 
-    printf("\r%d days %d hourse %d minutes %d seconds", days, hourse, minutes, seconds); 
+    // printf("\r%d days %d hourse %d minutes %d seconds", days, hourse, minutes, seconds); 
 }
 
 

@@ -10,7 +10,7 @@
 #define KEY_L8 0x48
 #define KEY_L9 0x49
 #define KEY_SHIFT 0x2A
-#define KEY_CTRL 0x1E
+#define KEY_CTRL 0x1D
 #define KEY_ALT	0x38
 #define KEY_ADD 0x2B
 #define KEY_SUB 0x2D

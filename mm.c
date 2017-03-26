@@ -19,7 +19,7 @@ _STARTDATA static unsigned long long _phy_mem_high;
 
 _START void mm_init(multiboot_info_t* mb)
 {
-    // mm_dump_phy(mb);
+    //mm_dump_phy(mb);
     mm_get_phy_mem_bound(mb);
     mm_setup_beginning_8m();
 }

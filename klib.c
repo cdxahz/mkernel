@@ -552,6 +552,12 @@ void vprintf(const char* src, va_list ap)
 					klib_print(arg);
 					break;
 				}
+			case 'c':
+				{
+					char arg = va_arg(ap, char);
+					klib_putchar(arg);
+					break; 
+				}
 			default:
 				{
 					klib_putchar('?');
@@ -662,6 +668,7 @@ unsigned int klib_rand()
 void reboot()
 {
 	// FIXME do formal steps before reboot
+	printf("rebooting...");
 	write_port(0x64, 0xfe);
 }
 

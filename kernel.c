@@ -74,31 +74,30 @@ void kmain_startup()
 	
 	int_enable_all();
 
-/*
-	printf("intr_stub %x, virtual_intr_stubs %x\n", intr_stubs, virtual_intr_stubs);
-
-	for(i = 0; i < 10; i++)
-		printf("intr[%d] %x\n",i, intr_stubs[i] );
 	
-	for (i = 0; i < 10; i++){
-		int *a = (int*)&(virtual_idt[i]);
-		printf("idt[i] %x %x\n", a[0], a[1]);
-	}
-*/
-	kb_init();
 
 	timer_init();
 
     klib_init();
-	
+
+    //klib_print("Hello");
+    
     // now we are debuggable
-    // printf("hello from %d, %u, %x, %s\n", -100, -100, -100, "world");
+	
 
 #ifdef TEST_MALLOC
 	test_malloc();
 #endif
 
 	dsr_init();
+
+	// idt_init();
+	
+	kb_init();
+
+	printf("Hello world!!!\n");
+
+	printf("> ");
 
 	run();
 }

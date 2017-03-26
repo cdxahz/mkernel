@@ -137,10 +137,12 @@ intr_handler (intr_frame *frame)
 	}
 
 	fn = in_callbacks[frame->vec_no];
+
 	if(fn)
 	  fn(frame);
-	else
-	  printf("int %x: %s", frame->vec_no, intr_names[frame->vec_no]);
+	else{
+	   printf("int %x: %s", frame->vec_no, intr_names[frame->vec_no]);
+    }
 
 	if (external)
 		pic_end_of_interrupt(frame->vec_no);
@@ -298,7 +300,7 @@ _START void int_init()
 
     setup_idt();
 
-	// int_diags();
+	//int_diags();
 }
 
 
